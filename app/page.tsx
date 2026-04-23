@@ -1,4 +1,5 @@
 // app/page.tsx
+import { Suspense } from 'react';
 import Form from '@/components/Form';
 
 export default function HomePage() {
@@ -8,7 +9,12 @@ export default function HomePage() {
         <h1 className="text-3xl font-semibold mb-4">
           Configurateur de cuisine
         </h1>
-        <Form />
+        <p className="text-slate-300 mb-6 text-sm">
+          Calcule en quelques secondes un devis précis pour ta cuisine.
+        </p>
+        <Suspense fallback={<p className="text-sm text-slate-400">Chargement…</p>}>
+          <Form />
+        </Suspense>
       </div>
     </main>
   );
