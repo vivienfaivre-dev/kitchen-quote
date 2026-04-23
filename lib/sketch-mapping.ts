@@ -30,8 +30,29 @@ export function estimateFromSketchMock(meta: SketchMetadata): KitchenQuoteInput 
     roomLength: Number(totalLength.toFixed(2)),
     range,
     hasIsland: meta.hasIsland ?? false,
-    custom: false,
+
+    // valeurs par défaut simples, pour satisfaire le type
+    baseCabinets: 6,
+    wallCabinets: 4,
+    tallCabinets: 0,
+
+    drawers: 4,
+    pullouts: 0,
+
+    worktopLength: Number(totalLength.toFixed(2)),
+    worktopDepth: 0.65,
+    backsplashLength: Number(totalLength.toFixed(2)),
+    backsplashHeight: 0.5,
+
+    handles: 10,
+    ledStrips: meta.hasIsland ? 2 : 1,
+
+    appliancesCount: 0,
+
     installation: true,
-    appliances: true,
+    delivery: false,
+    removal: false,
+
+    customWork: false,
   };
 }
