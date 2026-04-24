@@ -1,21 +1,17 @@
 // app/page.tsx
-import { Suspense } from 'react';
-import Form from '@/components/Form';
+import { KitchenItemsBuilder } from "@/components/KitchenItemsBuilder";
 
-export default function HomePage() {
+export default function Page() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
-      <div className="w-full max-w-3xl rounded-2xl bg-slate-900/60 p-8 shadow-xl border border-slate-800">
-        <h1 className="text-3xl font-semibold mb-4">
-          Super outil des Cuisines de Vincent
-        </h1>
-        <p className="text-slate-300 mb-6 text-sm">
-          Calcule en quelques secondes un devis précis pour ta cuisine.
-        </p>
-        <Suspense fallback={<p className="text-sm text-slate-400">Chargement…</p>}>
-          <Form />
-        </Suspense>
-      </div>
+    <main className="mx-auto max-w-4xl p-4">
+      <h1 className="text-3xl font-semibold mb-4">
+        Super outil des Cuisines de Vincent
+      </h1>
+
+      {/* Nouveau bloc : construction des éléments */}
+      <KitchenItemsBuilder />
+
+      {/* Plus tard : bouton “Calculer le devis” qui lit le tableau `items` */}
     </main>
   );
 }

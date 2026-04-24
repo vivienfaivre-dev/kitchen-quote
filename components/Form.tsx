@@ -124,17 +124,17 @@ export default function Form() {
       )}
 
       {/* Indicateur de steps */}
-      <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
-        <div className={currentStep >= 1 ? 'text-emerald-400 font-medium' : ''}>
+      <div className="flex items-center justify-between text-xs text-slate-300 mb-2">
+        <div className={currentStep >= 1 ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
           1. Dimensions & gamme
         </div>
-        <div className={currentStep >= 2 ? 'text-emerald-400 font-medium' : ''}>
+        <div className={currentStep >= 2 ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
           2. Meubles
         </div>
-        <div className={currentStep >= 3 ? 'text-emerald-400 font-medium' : ''}>
+        <div className={currentStep >= 3 ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
           3. Intérieurs & finitions
         </div>
-        <div className={currentStep >= 4 ? 'text-emerald-400 font-medium' : ''}>
+        <div className={currentStep >= 4 ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
           4. Services & total
         </div>
       </div>
@@ -147,18 +147,18 @@ export default function Form() {
         {currentStep === 1 && (
           <>
             <div>
-              <label className="block text-sm mb-1">Nom du client</label>
+              <label className="block text-sm mb-1 text-slate-200">Nom du client</label>
               <input
                 type="text"
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
                 placeholder="Ex : Mme Dupont"
-                className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full rounded-md bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-50 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm mb-1">
+              <label className="block text-sm mb-1 text-slate-200">
                 Longueur de cuisine (mètres)
               </label>
               <input
@@ -166,20 +166,20 @@ export default function Form() {
                 value={roomLength}
                 onChange={(e) => setRoomLength(e.target.value)}
                 placeholder="Ex : 4.20"
-                className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full rounded-md bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-50 placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm mb-1">Gamme</label>
+              <label className="block text-sm mb-1 text-slate-200">Gamme</label>
               <div className="flex gap-3 text-sm">
                 <button
                   type="button"
                   onClick={() => setRange('entry')}
-                  className={`px-3 py-2 rounded-md border ${
+                  className={`px-3 py-2 rounded-md border text-slate-50 ${
                     range === 'entry'
                       ? 'bg-sky-600 border-sky-500'
-                      : 'bg-slate-800 border-slate-700'
+                      : 'bg-slate-900 border-slate-700'
                   }`}
                 >
                   Entrée de gamme
@@ -187,10 +187,10 @@ export default function Form() {
                 <button
                   type="button"
                   onClick={() => setRange('mid')}
-                  className={`px-3 py-2 rounded-md border ${
+                  className={`px-3 py-2 rounded-md border text-slate-50 ${
                     range === 'mid'
                       ? 'bg-sky-600 border-sky-500'
-                      : 'bg-slate-800 border-slate-700'
+                      : 'bg-slate-900 border-slate-700'
                   }`}
                 >
                   Milieu de gamme
@@ -198,10 +198,10 @@ export default function Form() {
                 <button
                   type="button"
                   onClick={() => setRange('premium')}
-                  className={`px-3 py-2 rounded-md border ${
+                  className={`px-3 py-2 rounded-md border text-slate-50 ${
                     range === 'premium'
                       ? 'bg-sky-600 border-sky-500'
-                      : 'bg-slate-800 border-slate-700'
+                      : 'bg-slate-900 border-slate-700'
                   }`}
                 >
                   Premium
@@ -209,12 +209,12 @@ export default function Form() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm text-slate-100">
               <input
                 type="checkbox"
                 checked={hasIsland}
                 onChange={(e) => setHasIsland(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-700 bg-slate-800"
+                className="h-4 w-4 rounded border-slate-600 bg-slate-900"
               />
               <span>Îlot central</span>
             </div>
@@ -225,7 +225,7 @@ export default function Form() {
         {currentStep === 2 && (
           <>
             <div>
-              <label className="block text-sm mb-1">
+              <label className="block text-sm mb-1 text-slate-200">
                 Meubles bas (nombre de caissons)
               </label>
               <input
@@ -233,12 +233,12 @@ export default function Form() {
                 min={0}
                 value={baseCabinets}
                 onChange={(e) => setBaseCabinets(parseNumber(e.target.value, 0))}
-                className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full rounded-md bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-50 outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm mb-1">
+              <label className="block text-sm mb-1 text-slate-200">
                 Meubles hauts (nombre de caissons)
               </label>
               <input
@@ -246,12 +246,12 @@ export default function Form() {
                 min={0}
                 value={wallCabinets}
                 onChange={(e) => setWallCabinets(parseNumber(e.target.value, 0))}
-                className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full rounded-md bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-50 outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm mb-1">
+              <label className="block text-sm mb-1 text-slate-200">
                 Colonnes (nombre de caissons)
               </label>
               <input
@@ -259,7 +259,7 @@ export default function Form() {
                 min={0}
                 value={tallCabinets}
                 onChange={(e) => setTallCabinets(parseNumber(e.target.value, 0))}
-                className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full rounded-md bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-50 outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
           </>
@@ -269,7 +269,7 @@ export default function Form() {
         {currentStep === 3 && (
           <>
             <div>
-              <label className="block text-sm mb-1">
+              <label className="block text-sm mb-1 text-slate-200">
                 Nombre de tiroirs
               </label>
               <input
@@ -277,12 +277,12 @@ export default function Form() {
                 min={0}
                 value={drawers}
                 onChange={(e) => setDrawers(parseNumber(e.target.value, 0))}
-                className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full rounded-md bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-50 outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm mb-1">
+              <label className="block text-sm mb-1 text-slate-200">
                 Colonnes / meubles à sortie totale
               </label>
               <input
@@ -290,12 +290,12 @@ export default function Form() {
                 min={0}
                 value={pullouts}
                 onChange={(e) => setPullouts(parseNumber(e.target.value, 0))}
-                className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full rounded-md bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-50 outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm mb-1">
+              <label className="block text-sm mb-1 text-slate-200">
                 Nombre de poignées
               </label>
               <input
@@ -303,12 +303,12 @@ export default function Form() {
                 min={0}
                 value={handles}
                 onChange={(e) => setHandles(parseNumber(e.target.value, 0))}
-                className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full rounded-md bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-50 outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm mb-1">
+              <label className="block text-sm mb-1 text-slate-200">
                 Bandes LED (nombre)
               </label>
               <input
@@ -316,7 +316,7 @@ export default function Form() {
                 min={0}
                 value={ledStrips}
                 onChange={(e) => setLedStrips(parseNumber(e.target.value, 0))}
-                className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full rounded-md bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-50 outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
           </>
@@ -326,47 +326,47 @@ export default function Form() {
         {currentStep === 4 && (
           <>
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-slate-100">
                 <span>Sur-mesure</span>
                 <select
                   value={customLevel}
                   onChange={(e) =>
                     setCustomLevel(Number(e.target.value) as 0 | 1 | 2)
                   }
-                  className="rounded-md bg-slate-800 border border-slate-700 px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-sky-500"
+                  className="rounded-md bg-slate-900 border border-slate-700 px-2 py-1 text-xs text-slate-50 outline-none focus:ring-2 focus:ring-sky-500"
                 >
-                  <option value={0}>Aucun</option>
-                  <option value={1}>Quelques éléments</option>
-                  <option value={2}>Sur-mesure fort</option>
+                  <option value={0} className="text-slate-900">Aucun</option>
+                  <option value={1} className="text-slate-900">Quelques éléments</option>
+                  <option value={2} className="text-slate-900">Sur-mesure fort</option>
                 </select>
               </label>
 
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-slate-100">
                 <input
                   type="checkbox"
                   checked={installation}
                   onChange={(e) => setInstallation(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-700 bg-slate-800"
+                  className="h-4 w-4 rounded border-slate-600 bg-slate-900"
                 />
                 Pose incluse
               </label>
 
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-slate-100">
                 <input
                   type="checkbox"
                   checked={oldKitchenRemoval}
                   onChange={(e) => setOldKitchenRemoval(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-700 bg-slate-800"
+                  className="h-4 w-4 rounded border-slate-600 bg-slate-900"
                 />
                 Dépose ancienne cuisine
               </label>
 
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-slate-100">
                 <input
                   type="checkbox"
                   checked={delivery}
                   onChange={(e) => setDelivery(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-700 bg-slate-800"
+                  className="h-4 w-4 rounded border-slate-600 bg-slate-900"
                 />
                 Livraison
               </label>
@@ -380,7 +380,7 @@ export default function Form() {
             type="button"
             onClick={goToPrevStep}
             disabled={currentStep === 1}
-            className="px-4 py-2 rounded-md border border-slate-700 text-sm disabled:opacity-40"
+            className="px-4 py-2 rounded-md border border-slate-700 text-sm text-slate-100 disabled:opacity-40"
           >
             Précédent
           </button>
@@ -389,7 +389,7 @@ export default function Form() {
             <button
               type="button"
               onClick={goToNextStep}
-              className="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold"
+              className="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-slate-50"
             >
               Suivant
             </button>
@@ -398,7 +398,7 @@ export default function Form() {
           {currentStep === 4 && (
             <button
               type="submit"
-              className="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold"
+              className="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-slate-50"
             >
               Calculer le devis
             </button>
@@ -408,67 +408,67 @@ export default function Form() {
 
       {quote && (
         <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-sm space-y-2">
-          <h2 className="text-base font-semibold mb-1">
+          <h2 className="text-base font-semibold mb-1 text-slate-50">
             Résultat du devis
           </h2>
 
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Meubles : {quote.cabinetsPrice.toLocaleString('fr-FR')} € HT
           </p>
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Intérieurs / tiroirs : {quote.interiorsPrice.toLocaleString('fr-FR')} € HT
           </p>
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Plans de travail : {quote.worktopPrice.toLocaleString('fr-FR')} € HT
           </p>
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Crédences : {quote.backsplashPrice.toLocaleString('fr-FR')} € HT
           </p>
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Finitions : {quote.finishingPrice.toLocaleString('fr-FR')} € HT
           </p>
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Quincaillerie / LED : {quote.hardwarePrice.toLocaleString('fr-FR')} € HT
           </p>
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Électroménager : {quote.appliancesPrice.toLocaleString('fr-FR')} € HT
           </p>
 
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Temps de fabrication estimé :{' '}
             {quote.fabricationHours.toFixed(1)} h
             {' '}≈ {(quote.fabricationHours / 8).toFixed(2)} j
           </p>
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Coût de fabrication (atelier) :{' '}
             {quote.fabricationCost.toLocaleString('fr-FR')} € HT
           </p>
 
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Matériel (hors services) :{' '}
             {quote.materialSubtotal.toLocaleString('fr-FR')} € HT
           </p>
 
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Services (total) : {quote.servicesPrice.toLocaleString('fr-FR')} € HT
           </p>
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Dont pose : {quote.installationPrice.toLocaleString('fr-FR')} € HT
           </p>
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Dont livraison : {quote.deliveryPrice.toLocaleString('fr-FR')} € HT
           </p>
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Dont dépose ancienne cuisine : {quote.removalPrice.toLocaleString('fr-FR')} € HT
           </p>
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Dont sur-mesure (service) : {quote.customWorkServicePrice.toLocaleString('fr-FR')} € HT
           </p>
 
-          <p className="text-slate-300">
+          <p className="text-slate-200">
             Marge : {quote.marginAmount.toLocaleString('fr-FR')} €
           </p>
-          <p className="text-slate-100 font-semibold">
+          <p className="text-slate-50 font-semibold">
             Total TTC estimé : {quote.totalPrice.toLocaleString('fr-FR')} €
           </p>
         </div>
