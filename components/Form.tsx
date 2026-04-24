@@ -448,9 +448,23 @@ export default function Form() {
             Matériel (hors services) :{' '}
             {quote.materialSubtotal.toLocaleString('fr-FR')} € HT
           </p>
+
           <p className="text-slate-300">
-            Services : {quote.servicesPrice.toLocaleString('fr-FR')} € HT
+            Services (total) : {quote.servicesPrice.toLocaleString('fr-FR')} € HT
           </p>
+          <p className="text-slate-300">
+            Dont pose : {quote.installationPrice.toLocaleString('fr-FR')} € HT
+          </p>
+          <p className="text-slate-300">
+            Dont livraison : {quote.deliveryPrice.toLocaleString('fr-FR')} € HT
+          </p>
+          <p className="text-slate-300">
+            Dont dépose ancienne cuisine : {quote.removalPrice.toLocaleString('fr-FR')} € HT
+          </p>
+          <p className="text-slate-300">
+            Dont sur-mesure (service) : {quote.customWorkServicePrice.toLocaleString('fr-FR')} € HT
+          </p>
+
           <p className="text-slate-300">
             Marge : {quote.marginAmount.toLocaleString('fr-FR')} €
           </p>

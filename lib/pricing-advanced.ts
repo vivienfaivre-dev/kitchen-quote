@@ -47,7 +47,14 @@ export type KitchenQuoteBreakdown = {
   finishingPrice: number;
   hardwarePrice: number;
   appliancesPrice: number;
+
+  // Services – détail
   servicesPrice: number;
+  installationPrice: number;
+  deliveryPrice: number;
+  removalPrice: number;
+  customWorkServicePrice: number;
+
   materialSubtotal: number;
   optionsTotal: number;
   marginAmount: number;
@@ -146,6 +153,10 @@ export function computeKitchenQuote(input: KitchenQuoteInput): KitchenQuoteBreak
 
   // --- Services (pose / livraison / dépose) ---
   let servicesPrice = 0;
+  let installationPrice = 0;
+  let deliveryPriceTotal = 0;
+  let removalPriceTotal = 0;
+  let customWorkServicePrice = 0;
 
   // Pose variable selon taille de la cuisine (artisan seul)
   if (input.installation) {
@@ -157,12 +168,24 @@ export function computeKitchenQuote(input: KitchenQuoteInput): KitchenQuoteBreak
     const installationDays = Math.max(1, totalCabinets * 0.125);
     const installationBase = installationDays * dayRate;
 
+    installationPrice = installationBase;
     servicesPrice += installationBase;
   }
 
-  if (input.delivery) servicesPrice += deliveryBase;
-  if (input.removal) servicesPrice += removalBase;
-  if (input.customWork) servicesPrice += customWorkBase;
+  if (input.delivery) {
+    deliveryPriceTotal = deliveryBase;
+    servicesPrice += deliveryBase;
+  }
+
+  if (input.removal) {
+    removalPriceTotal = removalBase;
+    servicesPrice += removalBase;
+  }
+
+  if (input.customWork) {
+    customWorkServicePrice = customWorkBase;
+    servicesPrice += customWorkBase;
+  }
 
   const materialSubtotal =
     cabinetsPrice +
@@ -190,6 +213,10 @@ export function computeKitchenQuote(input: KitchenQuoteInput): KitchenQuoteBreak
     hardwarePrice,
     appliancesPrice,
     servicesPrice,
+    installationPrice,
+    deliveryPrice: deliveryPriceTotal,
+    removalPrice: removalPriceTotal,
+    customWorkServicePrice,
     materialSubtotal,
     optionsTotal,
     marginAmount,
