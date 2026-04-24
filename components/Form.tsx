@@ -435,6 +435,16 @@ export default function Form() {
           </p>
 
           <p className="text-slate-300">
+            Temps de fabrication estimé :{' '}
+            {quote.fabricationHours.toFixed(1)} h
+            {' '}≈ {(quote.fabricationHours / 8).toFixed(2)} j
+          </p>
+          <p className="text-slate-300">
+            Coût de fabrication (atelier) :{' '}
+            {quote.fabricationCost.toLocaleString('fr-FR')} € HT
+          </p>
+
+          <p className="text-slate-300">
             Matériel (hors services) :{' '}
             {quote.materialSubtotal.toLocaleString('fr-FR')} € HT
           </p>

@@ -52,6 +52,10 @@ export type KitchenQuoteBreakdown = {
   optionsTotal: number;
   marginAmount: number;
   totalPrice: number;
+
+  // Temps de fabrication
+  fabricationHours: number;
+  fabricationCost: number;
 };
 
 function getRangeMultiplier(range: KitchenRange): number {
@@ -126,6 +130,27 @@ export function computeKitchenQuote(input: KitchenQuoteInput): KitchenQuoteBreak
   if (input.removal) servicesPrice += removalBase;
   if (input.customWork) servicesPrice += customWorkBase;
 
+  // Temps de fabrication (en heures)
+  const fabricationHoursFromCabinets =
+    input.baseCabinets * 1.0 +   // 1 h par meuble bas
+    input.wallCabinets * 0.8 +   // 0,8 h par meuble haut
+    input.tallCabinets * 1.5;    // 1,5 h par colonne
+
+  const fabricationHoursFromInteriors =
+    input.drawers * 0.25 +       // 0,25 h par tiroir
+    input.pullouts * 0.75;       // 0,75 h par meuble à sortie totale
+
+  const fabricationHoursFromCustom = input.customWork ? 4 : 0; // forfait sur-mesure
+
+  const fabricationHours =
+    fabricationHoursFromCabinets +
+    fabricationHoursFromInteriors +
+    fabricationHoursFromCustom;
+
+  const hoursPerDay = 8;
+  const dayRate = 500; // 500 € / jour
+  const fabricationCost = (fabricationHours / hoursPerDay) * dayRate;
+
   const materialSubtotal =
     cabinetsPrice +
     interiorsPrice +
@@ -135,7 +160,7 @@ export function computeKitchenQuote(input: KitchenQuoteInput): KitchenQuoteBreak
     hardwarePrice +
     appliancesPrice;
 
-  const optionsTotal = servicesPrice;
+  const optionsTotal = servicesPrice + fabricationCost;
 
   // Marge – par exemple 20% sur le total matériel + options
   const marginRate = 0.2;
@@ -156,5 +181,7 @@ export function computeKitchenQuote(input: KitchenQuoteInput): KitchenQuoteBreak
     optionsTotal,
     marginAmount,
     totalPrice,
+    fabricationHours,
+    fabricationCost,
   };
 }
