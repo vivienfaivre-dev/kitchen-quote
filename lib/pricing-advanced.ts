@@ -199,7 +199,7 @@ export function computeKitchenQuote(input: KitchenQuoteInput): KitchenQuoteBreak
   const optionsTotal = servicesPrice + fabricationCost;
 
   // Marge – par exemple 20% sur le total matériel + options
-  const marginRate = 0.2;
+  const marginRate = 0.25;
   const marginAmount = (materialSubtotal + optionsTotal) * marginRate;
 
   const totalPrice = materialSubtotal + optionsTotal + marginAmount;
