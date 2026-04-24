@@ -152,8 +152,9 @@ export function computeKitchenQuote(input: KitchenQuoteInput): KitchenQuoteBreak
     const totalCabinets =
       input.baseCabinets + input.wallCabinets + input.tallCabinets;
 
-    // 0,5 jour de pose par caisson, minimum 1 jour
-    const installationDays = Math.max(1, totalCabinets * 0.5);
+    // calibré sur ton exemple : ~0,125 jour de pose par caisson
+    // 16 caissons -> 2 jours, minimum 1 jour pour les petites cuisines
+    const installationDays = Math.max(1, totalCabinets * 0.125);
     const installationBase = installationDays * dayRate;
 
     servicesPrice += installationBase;
