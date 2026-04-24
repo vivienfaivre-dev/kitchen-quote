@@ -88,7 +88,7 @@ export function computeKitchenQuote(input: KitchenQuoteInput): KitchenQuoteBreak
 
   const applianceUnit = 380 * rangeFactor;
 
-  const installationBase = 700;
+  // Services fixes (hors pose)
   const deliveryBase = 180;
   const removalBase = 250;
   const customWorkBase = 350 * rangeFactor;
@@ -123,24 +123,17 @@ export function computeKitchenQuote(input: KitchenQuoteInput): KitchenQuoteBreak
   // Électros
   const appliancesPrice = input.appliancesCount * applianceUnit;
 
-  // Services
-  let servicesPrice = 0;
-  if (input.installation) servicesPrice += installationBase;
-  if (input.delivery) servicesPrice += deliveryBase;
-  if (input.removal) servicesPrice += removalBase;
-  if (input.customWork) servicesPrice += customWorkBase;
-
-  // Temps de fabrication (en heures)
+  // --- Temps de fabrication (artisan seul) ---
   const fabricationHoursFromCabinets =
-    input.baseCabinets * 1.0 +   // 1 h par meuble bas
-    input.wallCabinets * 0.8 +   // 0,8 h par meuble haut
-    input.tallCabinets * 1.5;    // 1,5 h par colonne
+    input.baseCabinets * 2.0 +   // 2 h par meuble bas
+    input.wallCabinets * 1.5 +   // 1,5 h par meuble haut
+    input.tallCabinets * 3.0;    // 3 h par colonne
 
   const fabricationHoursFromInteriors =
-    input.drawers * 0.25 +       // 0,25 h par tiroir
-    input.pullouts * 0.75;       // 0,75 h par meuble à sortie totale
+    input.drawers * 0.5 +        // 0,5 h par tiroir
+    input.pullouts * 1.5;        // 1,5 h par meuble à sortie totale
 
-  const fabricationHoursFromCustom = input.customWork ? 4 : 0; // forfait sur-mesure
+  const fabricationHoursFromCustom = input.customWork ? 8 : 0; // 8 h sur-mesure
 
   const fabricationHours =
     fabricationHoursFromCabinets +
@@ -150,6 +143,25 @@ export function computeKitchenQuote(input: KitchenQuoteInput): KitchenQuoteBreak
   const hoursPerDay = 8;
   const dayRate = 500; // 500 € / jour
   const fabricationCost = (fabricationHours / hoursPerDay) * dayRate;
+
+  // --- Services (pose / livraison / dépose) ---
+  let servicesPrice = 0;
+
+  // Pose variable selon taille de la cuisine (artisan seul)
+  if (input.installation) {
+    const totalCabinets =
+      input.baseCabinets + input.wallCabinets + input.tallCabinets;
+
+    // 0,5 jour de pose par caisson, minimum 1 jour
+    const installationDays = Math.max(1, totalCabinets * 0.5);
+    const installationBase = installationDays * dayRate;
+
+    servicesPrice += installationBase;
+  }
+
+  if (input.delivery) servicesPrice += deliveryBase;
+  if (input.removal) servicesPrice += removalBase;
+  if (input.customWork) servicesPrice += customWorkBase;
 
   const materialSubtotal =
     cabinetsPrice +
