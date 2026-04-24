@@ -29,6 +29,7 @@ type KitchenItemFrontConfig =
   | "tall-drawers";
 
 type BaseCornerOption = "shelf" | "kidney";
+type WorktopPriceUnit = "ml" | "m2";
 
 export interface KitchenItem {
   id: string;
@@ -37,8 +38,10 @@ export interface KitchenItem {
   widthCm?: number;
   frontConfig?: KitchenItemFrontConfig;
   drawerCount?: 1 | 2 | 3;
-  cornerOption?: BaseCornerOption; // option meuble bas d'angle
-  wallHeightCm?: number;           // hauteur meuble haut
+  cornerOption?: BaseCornerOption;
+  wallHeightCm?: number;
+  worktopPrice?: number;
+  worktopUnit?: WorktopPriceUnit;
 }
 
 const WIDTH_OPTIONS = [30, 40, 50, 60, 70, 80, 90, 100, 110, 120];
@@ -103,11 +106,43 @@ const BASE_CORNER_OPTIONS: { value: BaseCornerOption; label: string }[] = [
   { value: "kidney", label: "Haricot" },
 ];
 
+const WORKTOP_DEPTH_M = 0.65;
+
+// Helpers pour récupérer les labels
+const categoryLabel = (value?: KitchenItemCategory) => {
+  if (!value) return "";
+  const opt = CATEGORY_OPTIONS.find((o) => o.value === value);
+  return opt ? opt.label : value;
+};
+
+const itemTypeLabel = (
+  category?: KitchenItemCategory,
+  value?: KitchenItemType,
+) => {
+  if (!category || !value) return "";
+  const list = ITEM_TYPE_OPTIONS[category] || [];
+  const opt = list.find((o) => o.value === value);
+  return opt ? opt.label : value;
+};
+
+const frontConfigLabel = (
+  category?: KitchenItemCategory,
+  value?: KitchenItemFrontConfig,
+) => {
+  if (!category || !value) return "";
+  const list = FRONT_CONFIG_OPTIONS[category] || [];
+  const opt = list.find((o) => o.value === value);
+  return opt ? opt.label : value;
+};
+
+// On appelle maintenant l'API Next locale (proxy)
+const GOOGLE_SCRIPT_PROXY_URL = "/api/google-quote";
+
 export function KitchenItemsBuilder() {
   const [items, setItems] = useState<KitchenItem[]>([]);
-  const [result, setResult] = useState<ReturnType<
-    typeof computeFromBuilderItems
-  > | null>(null);
+  const [result, setResult] = useState<
+    ReturnType<typeof computeFromBuilderItems> | null
+  >(null);
 
   const handleAddItem = () => {
     setItems((prev) => [...prev, { id: nanoid() }]);
@@ -116,7 +151,7 @@ export function KitchenItemsBuilder() {
 
   const updateItem = (id: string, partial: Partial<KitchenItem>) => {
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...partial } : item))
+      prev.map((item) => (item.id === id ? { ...item, ...partial } : item)),
     );
     setResult(null);
   };
@@ -131,6 +166,8 @@ export function KitchenItemsBuilder() {
       widthCm: undefined,
       cornerOption: undefined,
       wallHeightCm: undefined,
+      worktopPrice: undefined,
+      worktopUnit: undefined,
     });
   };
 
@@ -149,7 +186,9 @@ export function KitchenItemsBuilder() {
   };
 
   const handleDrawerCountChange = (id: string, countValue: string) => {
-    const val = countValue ? (parseInt(countValue, 10) as 1 | 2 | 3) : undefined;
+    const val = countValue
+      ? (parseInt(countValue, 10) as 1 | 2 | 3)
+      : undefined;
     updateItem(id, { drawerCount: val });
   };
 
@@ -163,6 +202,19 @@ export function KitchenItemsBuilder() {
     updateItem(id, { wallHeightCm: h });
   };
 
+  const handleWorktopPriceChange = (id: string, value: string) => {
+    const price = value ? parseFloat(value) : undefined;
+    updateItem(id, {
+      worktopPrice:
+        price !== undefined && !Number.isNaN(price) ? price : undefined,
+    });
+  };
+
+  const handleWorktopUnitChange = (id: string, value: string) => {
+    const unit = value ? (value as WorktopPriceUnit) : undefined;
+    updateItem(id, { worktopUnit: unit });
+  };
+
   const handleRemoveItem = (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
     setResult(null);
@@ -170,10 +222,11 @@ export function KitchenItemsBuilder() {
 
   const handleCalculate = () => {
     const payload: CabinetItemLike[] = items.map((item) => ({
+      id: item.id,
       category: item.category,
       itemType: item.itemType,
       widthCm: item.widthCm,
-      heightCm: item.wallHeightCm, // important pour les hauts
+      heightCm: item.wallHeightCm,
       frontConfig: item.frontConfig,
       drawerCount: item.drawerCount,
       cornerOption: item.cornerOption,
@@ -182,6 +235,230 @@ export function KitchenItemsBuilder() {
     const r = computeFromBuilderItems(payload);
     setResult(r);
   };
+
+  const handleDownloadQuote = () => {
+    if (!result) return;
+
+    const headers = [
+      "Élément",
+      "Catégorie",
+      "Type",
+      "Largeur (cm)",
+      "Hauteur (cm)",
+      "Façades",
+      "Matière HT",
+      "Atelier HT",
+      "Total HT",
+    ];
+
+    const rows = result.detailed.map((row, idx) => {
+      const item = row.item;
+      const price = row.price;
+
+      const cat = categoryLabel(
+        item.category as KitchenItemCategory | undefined,
+      );
+      const type = itemTypeLabel(
+        item.category as KitchenItemCategory | undefined,
+        item.itemType as KitchenItemType | undefined,
+      );
+      const front = frontConfigLabel(
+        item.category as KitchenItemCategory | undefined,
+        item.frontConfig as KitchenItemFrontConfig | undefined,
+      );
+
+      return [
+        idx + 1,
+        cat,
+        type,
+        item.widthCm ?? "",
+        item.heightCm ?? "",
+        front,
+        price ? price.materialPrice.toFixed(2) : "",
+        price ? price.laborCost.toFixed(2) : "",
+        price ? price.totalPrice.toFixed(2) : "",
+      ];
+    });
+
+    rows.push([]);
+    rows.push([
+      "Totaux",
+      "",
+      "",
+      "",
+      "",
+      "",
+      result.totals.material.toFixed(2),
+      result.totals.laborCost.toFixed(2),
+      (result.totals.totalHTMeubles + result.totals.installationCost).toFixed(
+        2,
+      ),
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map((line) => line.join(";"))
+      .join("\\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "devis-cuisine.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // ENVOI VERS GOOGLE SHEETS via API Next (proxy)
+  const handleSendToGoogleSheet = async () => {
+    if (!result) return;
+
+    const FURNITURE_MARGIN_RATE = 0.30; // 30 % sur (matière + atelier)
+
+    // 1) Lignes meubles (lignes 19–31)
+    const rowsMeubles = result.detailed
+      .filter((row) => row.price)
+      .map((row, idx) => {
+        const item = row.item;
+        const price = row.price!;
+        const cat = categoryLabel(
+          item.category as KitchenItemCategory | undefined,
+        );
+        const type = itemTypeLabel(
+          item.category as KitchenItemCategory | undefined,
+          item.itemType as KitchenItemType | undefined,
+        );
+        const front = frontConfigLabel(
+          item.category as KitchenItemCategory | undefined,
+          item.frontConfig as KitchenItemFrontConfig | undefined,
+        );
+
+        let designation = `Élément ${idx + 1}`;
+        if (cat) designation += ` – ${cat}`;
+        if (type) designation += ` / ${type}`;
+        if (item.widthCm || item.heightCm) {
+          designation += " / ";
+          if (item.widthCm) designation += `${item.widthCm} cm`;
+          if (item.widthCm && item.heightCm) designation += " x ";
+          if (item.heightCm) designation += `${item.heightCm} cm`;
+        }
+        if (front) designation += ` / façades : ${front}`;
+
+        const qty = 1;
+        const tva = 20;
+
+        // coûts réels
+        const materialCost = price.materialPrice;
+        const laborCost = price.laborCost;
+        const baseFurnitureCost = materialCost + laborCost;
+
+        // marge 30 % sur (matière + atelier)
+        const marginAmount = baseFurnitureCost * FURNITURE_MARGIN_RATE;
+        const sellingPrice = baseFurnitureCost + marginAmount;
+
+        const prixUnitaireHT = sellingPrice;
+        const totalHT = sellingPrice * qty;
+
+        return [designation, qty, tva, prixUnitaireHT, totalHT];
+      });
+
+    // 2) Détail pose (lignes 34–38) – sans marge
+    const rowsPose: (string | number)[][] = [];
+    if (
+      result.totals.installationCost > 0 &&
+      result.totals.installationDays > 0
+    ) {
+      const designation = "Pose cuisine (meubles + plan de travail)";
+      const qtyJours = Number(result.totals.installationDays.toFixed(2));
+      const tva = 20;
+      const prixJourHT = result.totals.installationCost / qtyJours;
+      const totalHT = result.totals.installationCost;
+
+      rowsPose.push([designation, qtyJours, tva, prixJourHT, totalHT]);
+    }
+
+    // 3) Totaux recalculés
+    const totalHTMeublesAvecMarge = rowsMeubles.reduce((sum, row) => {
+      const totalHTLigne = Number(row[4]) || 0;
+      return sum + totalHTLigne;
+    }, 0);
+
+    const totalHTPose = result.totals.installationCost;
+    const totalHTGlobal = totalHTMeublesAvecMarge + totalHTPose;
+
+    const vatRate = result.totals.vatRate ?? 0.2;
+    const totalTVA = totalHTGlobal * vatRate;
+    const totalTTC = totalHTGlobal + totalTVA;
+
+    const payload = {
+      rowsMeubles,
+      rowsPose,
+      totals: {
+        totalHTGlobal,
+        totalTTC,
+      },
+    };
+
+    try {
+      const res = await fetch(GOOGLE_SCRIPT_PROXY_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const text = await res.text();
+      console.log("Réponse brute proxy/Apps Script:", text);
+
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.error("Réponse non JSON du proxy/Apps Script:", text);
+        alert("Réponse inattendue de Google Sheets (voir console).");
+        return;
+      }
+
+      if (data.status === "success" && data.url) {
+        window.open(data.url, "_blank");
+      } else {
+        console.error(
+          "Erreur Apps Script (JSON OK mais status pas success):",
+          data,
+        );
+        alert("Erreur lors de la création du Google Sheet (voir console).");
+      }
+    } catch (err) {
+      console.error("Erreur fetch vers l'API Next:", err);
+      alert("Erreur réseau vers l'API locale (proxy).");
+    }
+  };
+
+  const totalBaseWidthCm = items
+    .filter((i) => i.category === "base" && i.widthCm)
+    .reduce((sum, i) => sum + (i.widthCm || 0), 0);
+  const totalBaseLengthM = totalBaseWidthCm / 100;
+
+  const worktopItem = items.find(
+    (i) => i.category === "worktop" && i.worktopPrice !== undefined,
+  );
+
+  let worktopTotalHT = 0;
+  let worktopSurfaceM2 = 0;
+
+  if (worktopItem && worktopItem.worktopPrice && totalBaseLengthM > 0) {
+    if (worktopItem.worktopUnit === "m2") {
+      worktopSurfaceM2 = totalBaseLengthM * WORKTOP_DEPTH_M;
+      worktopTotalHT = worktopSurfaceM2 * worktopItem.worktopPrice;
+    } else {
+      worktopTotalHT = totalBaseLengthM * worktopItem.worktopPrice;
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -218,13 +495,14 @@ export function KitchenItemsBuilder() {
           const showCornerOption =
             category === "base" && item.itemType === "base-corner";
           const showWallHeight = category === "wall";
+          const showWorktopFields = category === "worktop";
 
           return (
             <div
               key={item.id}
               className="rounded border border-slate-700 p-3 space-y-2 bg-slate-900/80"
             >
-              <div className="flex justify-between items-center">
+              <div className="flex justify_between items-center">
                 <span className="font-medium text-slate-50">
                   Élément {index + 1}
                 </span>
@@ -389,6 +667,43 @@ export function KitchenItemsBuilder() {
                   </select>
                 </div>
               )}
+
+              {showWorktopFields && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-slate-200">
+                      Prix plan de travail
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      className="w-full rounded-md bg-slate-900 text-slate-50 border border-slate-700 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                      value={item.worktopPrice ?? ""}
+                      onChange={(e) =>
+                        handleWorktopPriceChange(item.id, e.target.value)
+                      }
+                      placeholder="Prix HT"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-slate-200">
+                      Unité du prix
+                    </label>
+                    <select
+                      className="w-full rounded-md bg-slate-900 text-slate-50 border border-slate-700 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+                      value={item.worktopUnit ?? "ml"}
+                      onChange={(e) =>
+                        handleWorktopUnitChange(item.id, e.target.value)
+                      }
+                    >
+                      <option value="ml">€/mètre linéaire</option>
+                      <option value="m2">€/mètre carré</option>
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
@@ -413,29 +728,87 @@ export function KitchenItemsBuilder() {
           </h3>
 
           <div className="space-y-2 max-h-80 overflow-auto pr-1">
-            {result.detailed.map((row, idx) =>
-              !row.price ? (
+            {result.detailed.map((row, idx) => {
+              const isWorktop = row.item.category === "worktop";
+
+              const catLabel = categoryLabel(
+                row.item.category as KitchenItemCategory | undefined,
+              );
+              const typeLabel = itemTypeLabel(
+                row.item.category as KitchenItemCategory | undefined,
+                row.item.itemType as KitchenItemType | undefined,
+              );
+              const frontLabel = frontConfigLabel(
+                row.item.category as KitchenItemCategory | undefined,
+                row.item.frontConfig as KitchenItemFrontConfig | undefined,
+              );
+
+              if (!row.price) {
+                if (isWorktop) {
+                  return (
+                    <div
+                      key={idx}
+                      className="rounded border border-slate-700/60 p-2 text-slate-200"
+                    >
+                      <div className="font-medium text-slate-50 mb-1">
+                        Élément {idx + 1}
+                        {catLabel && <> – {catLabel}</>}
+                        {typeLabel && <> / {typeLabel}</>}
+                        {row.item.widthCm && <> / {row.item.widthCm} cm</>}
+                      </div>
+                      <div className="flex flex-wrap gap-4 text-xs">
+                        <span>
+                          Longueur prise en compte :{" "}
+                          {totalBaseLengthM.toFixed(2)} m
+                        </span>
+                        {worktopSurfaceM2 > 0 && (
+                          <span>
+                            Surface estimée : {worktopSurfaceM2.toFixed(2)} m²
+                          </span>
+                        )}
+                        <span className="font-semibold text-slate-50">
+                          Total plan de travail : {worktopTotalHT.toFixed(2)} €
+                          HT
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    key={idx}
+                    className="rounded border border-slate-700/60 p-2 text-slate-300"
+                  >
+                    Élément {idx + 1} : configuration incomplète (non chiffré).
+                  </div>
+                );
+              }
+
+              return (
                 <div
-                  key={row.item.id || idx}
-                  className="rounded border border-slate-700/60 p-2 text-slate-300"
-                >
-                  Élément {idx + 1} : configuration incomplète (non chiffré).
-                </div>
-              ) : (
-                <div
-                  key={row.item.id || idx}
+                  key={idx}
                   className="rounded border border-slate-700/60 p-2 text-slate-200"
                 >
                   <div className="font-medium text-slate-50 mb-1">
-                    Élément {idx + 1} – {row.item.category} / {row.item.itemType}
+                    Élément {idx + 1}
+                    {catLabel && <> – {catLabel}</>}
+                    {typeLabel && <> / {typeLabel}</>}
+                    {(row.item.widthCm || row.item.heightCm) && (
+                      <>
+                        {" / "}
+                        {row.item.widthCm && `${row.item.widthCm} cm`}
+                        {row.item.widthCm && row.item.heightCm && " x "}
+                        {row.item.heightCm && `${row.item.heightCm} cm`}
+                      </>
+                    )}
+                    {frontLabel && <> / façades : {frontLabel}</>}
                   </div>
                   <div className="flex flex-wrap gap-4 text-xs">
                     <span>
                       Matière : {row.price.materialPrice.toFixed(2)} € HT
                     </span>
-                    <span>
-                      Temps : {row.price.laborHours.toFixed(2)} h
-                    </span>
+                    <span>Temps : {row.price.laborHours.toFixed(2)} h</span>
                     <span>
                       Atelier : {row.price.laborCost.toFixed(2)} € HT
                     </span>
@@ -444,8 +817,8 @@ export function KitchenItemsBuilder() {
                     </span>
                   </div>
                 </div>
-              )
-            )}
+              );
+            })}
           </div>
 
           <div className="pt-2 border-t border-slate-700/60 mt-2 space-y-1">
@@ -465,28 +838,98 @@ export function KitchenItemsBuilder() {
             <p className="text-slate-200">
               Coût pose (HT) : {result.totals.installationCost.toFixed(2)} €
             </p>
+
             <p className="text-slate-200">
               Total HT (meubles + pose, sans marge) :{" "}
-              {(result.totals.totalHTMeubles + result.totals.installationCost).toFixed(
-                2
-              )}{" "}
+              {(
+                result.totals.totalHTMeubles +
+                result.totals.installationCost
+              ).toFixed(2)}{" "}
               €
             </p>
+
             <p className="text-slate-200">
-              Marge commerciale ({(result.totals.marginRate * 100).toFixed(0)}{" "}
-              %) : {result.totals.marginAmount.toFixed(2)} € HT
+              Total linéaire meubles bas : {totalBaseLengthM.toFixed(2)} m
             </p>
-            <p className="text-slate-200">
-              Total HT avec marge :{" "}
-              {result.totals.totalHTAvecMarge.toFixed(2)} €
-            </p>
-            <p className="text-slate-200">
-              TVA ({(result.totals.vatRate * 100).toFixed(0)} %) :{" "}
-              {result.totals.vatAmount.toFixed(2)} €
-            </p>
-            <p className="text-slate-50 font-semibold">
-              Total TTC : {result.totals.totalTTC.toFixed(2)} €
-            </p>
+
+            {worktopTotalHT > 0 && (
+              <p className="text-slate-200">
+                Plan de travail (1 prix global) :{" "}
+                {worktopTotalHT.toFixed(2)} € HT
+              </p>
+            )}
+
+            {(() => {
+              const baseHTSansMarge =
+                result.totals.totalHTMeubles +
+                result.totals.installationCost;
+
+              const baseHTAvecPlan = baseHTSansMarge + worktopTotalHT;
+              const margeAvecPlan =
+                baseHTAvecPlan * result.totals.marginRate;
+              const totalHTAvecMargeEtPlan =
+                baseHTAvecPlan + margeAvecPlan;
+              const tvaAvecPlan =
+                totalHTAvecMargeEtPlan * result.totals.vatRate;
+              const totalTTCAvecPlan = totalHTAvecMargeEtPlan + tvaAvecPlan;
+
+              return worktopTotalHT > 0 ? (
+                <>
+                  <p className="text-slate-200">
+                    Marge commerciale (
+                    {(result.totals.marginRate * 100).toFixed(0)} %) :{" "}
+                    {margeAvecPlan.toFixed(2)} € HT
+                  </p>
+                  <p className="text-slate-200">
+                    Total HT avec marge :{" "}
+                    {totalHTAvecMargeEtPlan.toFixed(2)} €
+                  </p>
+                  <p className="text-slate-200">
+                    TVA ({(result.totals.vatRate * 100).toFixed(0)} %) :{" "}
+                    {tvaAvecPlan.toFixed(2)} €
+                  </p>
+                  <p className="text-slate-50 font-semibold">
+                    Total TTC : {totalTTCAvecPlan.toFixed(2)} €
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-slate-200">
+                    Marge commerciale (
+                    {(result.totals.marginRate * 100).toFixed(0)} %) :{" "}
+                    {result.totals.marginAmount.toFixed(2)} € HT
+                  </p>
+                  <p className="text-slate-200">
+                    Total HT avec marge :{" "}
+                    {result.totals.totalHTAvecMarge.toFixed(2)} €
+                  </p>
+                  <p className="text-slate-200">
+                    TVA ({(result.totals.vatRate * 100).toFixed(0)} %) :{" "}
+                    {result.totals.vatAmount.toFixed(2)} €
+                  </p>
+                  <p className="text-slate-50 font-semibold">
+                    Total TTC : {result.totals.totalTTC.toFixed(2)} €
+                  </p>
+                </>
+              );
+            })()}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <button
+              type="button"
+              onClick={handleDownloadQuote}
+              className="rounded-md bg-sky-600 hover:bg-sky-500 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Télécharger le devis (CSV)
+            </button>
+            <button
+              type="button"
+              onClick={handleSendToGoogleSheet}
+              className="rounded-md bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Envoyer vers Google Sheets
+            </button>
           </div>
         </div>
       )}
