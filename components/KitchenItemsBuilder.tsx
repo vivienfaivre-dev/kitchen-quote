@@ -135,7 +135,7 @@ const frontConfigLabel = (
   return opt ? opt.label : value;
 };
 
-// On appelle maintenant l'API Next locale (proxy)
+// API Next locale (proxy)
 const GOOGLE_SCRIPT_PROXY_URL = "/api/google-quote";
 
 export function KitchenItemsBuilder() {
@@ -297,7 +297,7 @@ export function KitchenItemsBuilder() {
 
     const csvContent = [headers, ...rows]
       .map((line) => line.join(";"))
-      .join("\\n");
+      .join("\n");
 
     const blob = new Blob([csvContent], {
       type: "text/csv;charset=utf-8;",
@@ -319,15 +319,19 @@ export function KitchenItemsBuilder() {
 
     const FURNITURE_MARGIN_RATE = 0.30; // 30 % sur (matière + atelier)
 
-    // 1) Lignes meubles (lignes 19–31)
-    const rowsMeubles = result.detailed
+    // 1) Préparation des lignes meubles AVANT fusion
+    type RawLine = {
+      key: string;
+      designation: string;
+      qty: number;
+      priceHT: number; // prix unitaire HT (avec marge)
+    };
+
+    const rawLines: RawLine[] = result.detailed
       .filter((row) => row.price)
-      .map((row, idx) => {
+      .map((row) => {
         const item = row.item;
         const price = row.price!;
-        const cat = categoryLabel(
-          item.category as KitchenItemCategory | undefined,
-        );
         const type = itemTypeLabel(
           item.category as KitchenItemCategory | undefined,
           item.itemType as KitchenItemType | undefined,
@@ -337,19 +341,31 @@ export function KitchenItemsBuilder() {
           item.frontConfig as KitchenItemFrontConfig | undefined,
         );
 
-        let designation = `Élément ${idx + 1}`;
-        if (cat) designation += ` – ${cat}`;
-        if (type) designation += ` / ${type}`;
-        if (item.widthCm || item.heightCm) {
-          designation += " / ";
-          if (item.widthCm) designation += `${item.widthCm} cm`;
-          if (item.widthCm && item.heightCm) designation += " x ";
-          if (item.heightCm) designation += `${item.heightCm} cm`;
-        }
-        if (front) designation += ` / façades : ${front}`;
+        // Désignation SANS "Élément X" et SANS catégorie
+        const parts: string[] = [];
+        if (type) parts.push(type);
 
-        const qty = 1;
-        const tva = 20;
+        if (item.widthCm || item.heightCm) {
+          let dim = "";
+          if (item.widthCm) dim += `${item.widthCm} cm`;
+          if (item.widthCm && item.heightCm) dim += " x ";
+          if (item.heightCm) dim += `${item.heightCm} cm`;
+          if (dim) parts.push(dim);
+        }
+
+        if (front) parts.push(`façades : ${front}`);
+
+        const designation = parts.join(" / ");
+
+        // Clé de regroupement : toutes les caractéristiques produit
+        const key = JSON.stringify({
+          itemType: item.itemType,
+          widthCm: item.widthCm,
+          heightCm: item.heightCm,
+          frontConfig: item.frontConfig,
+          drawerCount: item.drawerCount,
+          cornerOption: item.cornerOption,
+        });
 
         // coûts réels
         const materialCost = price.materialPrice;
@@ -358,49 +374,59 @@ export function KitchenItemsBuilder() {
 
         // marge 30 % sur (matière + atelier)
         const marginAmount = baseFurnitureCost * FURNITURE_MARGIN_RATE;
-        const sellingPrice = baseFurnitureCost + marginAmount;
+        const sellingPrice = baseFurnitureCost + marginAmount; // prix unitaire HT
 
-        const prixUnitaireHT = sellingPrice;
-        const totalHT = sellingPrice * qty;
-
-        return [designation, qty, tva, prixUnitaireHT, totalHT];
+        return {
+          key,
+          designation,
+          qty: 1,
+          priceHT: sellingPrice,
+        };
       });
 
-    // 2) Détail pose (lignes 34–38) – sans marge
+    // 2) Fusion des lignes identiques (group by)
+    const groupedMap = new Map<string, RawLine>();
+
+    for (const line of rawLines) {
+      const existing = groupedMap.get(line.key);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        groupedMap.set(line.key, { ...line });
+      }
+    }
+
+    const groupedLines = Array.from(groupedMap.values());
+
+    // 3) Construction rowsMeubles pour Google Sheets
+    // Format envoyé : [designation, qty, priceHT]
+    const rowsMeubles: (string | number)[][] = groupedLines.map((line) => [
+      line.designation,
+      line.qty,
+      parseFloat(line.priceHT.toFixed(2)),
+    ]);
+
+    // 4) Lignes de pose : [designation, qty, priceHT]
     const rowsPose: (string | number)[][] = [];
     if (
       result.totals.installationCost > 0 &&
       result.totals.installationDays > 0
     ) {
       const designation = "Pose cuisine (meubles + plan de travail)";
-      const qtyJours = Number(result.totals.installationDays.toFixed(2));
-      const tva = 20;
+      const qtyJours = parseFloat(result.totals.installationDays.toFixed(2));
       const prixJourHT = result.totals.installationCost / qtyJours;
-      const totalHT = result.totals.installationCost;
 
-      rowsPose.push([designation, qtyJours, tva, prixJourHT, totalHT]);
+      rowsPose.push([
+        designation,
+        qtyJours,
+        parseFloat(prixJourHT.toFixed(2)),
+      ]);
     }
-
-    // 3) Totaux recalculés
-    const totalHTMeublesAvecMarge = rowsMeubles.reduce((sum, row) => {
-      const totalHTLigne = Number(row[4]) || 0;
-      return sum + totalHTLigne;
-    }, 0);
-
-    const totalHTPose = result.totals.installationCost;
-    const totalHTGlobal = totalHTMeublesAvecMarge + totalHTPose;
-
-    const vatRate = result.totals.vatRate ?? 0.2;
-    const totalTVA = totalHTGlobal * vatRate;
-    const totalTTC = totalHTGlobal + totalTVA;
 
     const payload = {
       rowsMeubles,
       rowsPose,
-      totals: {
-        totalHTGlobal,
-        totalTTC,
-      },
+      totals: {},
     };
 
     try {
@@ -767,8 +793,7 @@ export function KitchenItemsBuilder() {
                           </span>
                         )}
                         <span className="font-semibold text-slate-50">
-                          Total plan de travail : {worktopTotalHT.toFixed(2)} €
-                          HT
+                          Total plan de travail : {worktopTotalHT.toFixed(2)} € HT
                         </span>
                       </div>
                     </div>

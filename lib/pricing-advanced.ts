@@ -403,6 +403,7 @@ export function computeCabinetUnitPrice(input: CabinetUnitInput): CabinetUnitPri
 // ========= AGRÉGATION POUR KitchenItemsBuilder =========
 
 export interface CabinetItemLike {
+  id?: string;                            // ← ajouté
   category?: 'base' | 'wall' | 'tall' | 'worktop';
   itemType?: string;
   widthCm?: number;
